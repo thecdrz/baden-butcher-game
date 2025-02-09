@@ -1,18 +1,18 @@
 const socket = io();
-let role = 'Player'; // All players are treated equally
+let role = 'Player';
 let currentScene = '';
 const backgroundMusic = document.getElementById('background-music');
 let musicPlaying = false;
 
-// Ready checkbox (visible to all players)
+// Ready Checkbox
 document.getElementById('ready-checkbox').addEventListener('change', (event) => {
     socket.emit('playerReady', event.target.checked);
 });
 
 // Update UI with ready count
-socket.on('updateConnectionStatus', ({ readyCount }) => {
-    const readyCountElement = document.getElementById('ready-count');
-    readyCountElement.innerText = `Players Ready: ${readyCount}/2`;
+socket.on('updateConnectionStatus', ({ readyCount, spectatorCount }) => {
+    document.getElementById('ready-count').innerText = `Players Ready: ${readyCount}/2`;
+    document.getElementById('spectator-count').innerText = spectatorCount;
 });
 
 // Start game when 2 players are ready
@@ -20,6 +20,24 @@ socket.on('startGame', () => {
     document.getElementById('title-screen').style.display = 'none';
     document.getElementById('game').style.display = 'block';
     startGame();
+});
+
+// Chat functionality
+const chatInput = document.getElementById('chat-input');
+const chatMessages = document.getElementById('chat-messages');
+
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && chatInput.value.trim()) {
+        socket.emit('sendMessage', chatInput.value.trim());
+        chatInput.value = '';
+    }
+});
+
+socket.on('receiveMessage', (message) => {
+    const messageElement = document.createElement('div');
+    messageElement.textContent = message;
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 });
 
 // Start Game Logic
