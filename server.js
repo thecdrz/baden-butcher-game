@@ -6,47 +6,81 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files (HTML, CSS, JS)
+// Serve static files
 app.use(express.static('public'));
 
-// Track connected players
-let players = {};
+// Track players
+let players = {
+    scott: { id: null, connected: false, ready: false },
+    chris: { id: null, connected: false, ready: false }
+};
 
 io.on('connection', (socket) => {
     console.log('A player connected:', socket.id);
 
-    // Assign roles (Scott or Chris)
-    if (!players.scott) {
-        players.scott = socket.id;
+    // Assign Scott or Chris role
+    if (!players.scott.connected) {
+        players.scott.id = socket.id;
+        players.scott.connected = true;
         socket.emit('assignRole', 'Scott');
-    } else if (!players.chris) {
-        players.chris = socket.id;
+    } else if (!players.chris.connected) {
+        players.chris.id = socket.id;
+        players.chris.connected = true;
         socket.emit('assignRole', 'Chris');
-        io.emit('playerConnected'); // Notify both players that Chris has connected
     } else {
         socket.emit('gameFull');
         socket.disconnect();
     }
 
-    // Handle player choices
+    // Broadcast status to all players
+    io.emit('updateConnectionStatus', players);
+
+    // Handle readiness
+    socket.on('playerReady', (isReady) => {
+        if (players.scott.id === socket.id) {
+            players.scott.ready = isReady;
+        } else if (players.chris.id === socket.id) {
+            players.chris.ready = isReady;
+        }
+        io.emit('updateConnectionStatus', players);
+    });
+
+    // Handle choices
     socket.on('playerChoice', (choice) => {
-        console.log(`Player ${socket.id} chose: ${choice}`);
         io.emit('updateGame', { player: socket.id, choice });
     });
 
-    // Handle disconnection
-    socket.on('disconnect', () => {
-        console.log('A player disconnected:', socket.id);
-        if (players.scott === socket.id) {
-            delete players.scott;
-        } else if (players.chris === socket.id) {
-            delete players.chris;
+    // Handle quitting to menu
+    socket.on('quitToMenu', () => {
+        if (players.scott.id === socket.id) {
+            players.scott.connected = false;
+            players.scott.ready = false;
+            players.scott.id = null;
+        } else if (players.chris.id === socket.id) {
+            players.chris.connected = false;
+            players.chris.ready = false;
+            players.chris.id = null;
         }
+        io.emit('updateConnectionStatus', players);
+    });
+
+    // Handle disconnect
+    socket.on('disconnect', () => {
+        if (players.scott.id === socket.id) {
+            players.scott.connected = false;
+            players.scott.ready = false;
+            players.scott.id = null;
+        } else if (players.chris.id === socket.id) {
+            players.chris.connected = false;
+            players.chris.ready = false;
+            players.chris.id = null;
+        }
+        io.emit('updateConnectionStatus', players);
     });
 });
 
-// Start the server
+// Start server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

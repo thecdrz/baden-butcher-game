@@ -10,15 +10,46 @@
     <div id="title-screen">
         <h1>The Baden Butcher</h1>
         <p>A Twilight Zone Co-op Adventure</p>
-        <button id="start-button">Start Game</button>
+        
+        <!-- Connection Status -->
+        <div id="connection-status">
+            <p><span id="scott-status">Scott: Waiting...</span></p>
+            <p><span id="chris-status">Chris: Waiting...</span></p>
+        </div>
+
+        <!-- Ready Checkbox -->
+        <div id="ready-section">
+            <label>
+                <input type="checkbox" id="ready-checkbox"> I'm Ready
+            </label>
+        </div>
+
+        <!-- Buttons -->
+        <button id="start-button" disabled>Start Game</button>
+        <button id="quit-game-button">Quit Game</button>
     </div>
+
     <div id="game" style="display: none;">
+        <div id="connection-status">
+            <strong>Scott:</strong> <span id="game-scott-status">Disconnected</span><br>
+            <strong>Chris:</strong> <span id="game-chris-status">Disconnected</span>
+        </div>
+        <button id="start-game-button" style="display: none;">Start Game</button>
+        <button id="quit-to-menu-button">Quit to Menu</button>
         <h1>The Baden Butcher</h1>
         <div id="role"></div>
-        <div id="connection-status"></div>
         <div id="scene"></div>
         <div id="choices"></div>
     </div>
+
+    <!-- Music Toggle -->
+    <button id="music-toggle">🎵 Toggle Music</button>
+
+    <!-- Background Music -->
+    <audio id="background-music" loop>
+        <source src="background-music.wav" type="audio/wav">
+    </audio>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>

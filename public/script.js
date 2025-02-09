@@ -2,55 +2,99 @@ const socket = io();
 
 let role = '';
 let currentScene = '';
+let isReady = false;
+const backgroundMusic = document.getElementById('background-music');
+let musicPlaying = false;
 
-// Show title screen initially
+// Title Screen: Start Button
 document.getElementById('start-button').addEventListener('click', () => {
     document.getElementById('title-screen').style.display = 'none';
     document.getElementById('game').style.display = 'block';
     socket.emit('readyToPlay');
 });
 
-// Assign role and start the game
+// Quit Game Button
+document.getElementById('quit-game-button').addEventListener('click', () => {
+    window.close();
+});
+
+// Quit to Menu Button
+document.getElementById('quit-to-menu-button').addEventListener('click', () => {
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('title-screen').style.display = 'block';
+    socket.emit('quitToMenu');
+});
+
+// Ready Checkbox
+document.getElementById('ready-checkbox').addEventListener('change', (event) => {
+    isReady = event.target.checked;
+    socket.emit('playerReady', isReady);
+});
+
+// Music Toggle
+document.getElementById('music-toggle').addEventListener('click', () => {
+    if (musicPlaying) {
+        backgroundMusic.pause();
+    } else {
+        backgroundMusic.play();
+    }
+    musicPlaying = !musicPlaying;
+});
+
+// Assign Role
 socket.on('assignRole', (assignedRole) => {
     role = assignedRole;
     document.getElementById('role').innerText = `You are ${role}`;
-    updateConnectionStatus();
-    startGame();
 });
 
-// Update connection status when Player 2 connects
-socket.on('playerConnected', () => {
-    updateConnectionStatus();
-});
+// Update Connection Status
+socket.on('updateConnectionStatus', (players) => {
+    const scottStatus = document.getElementById('scott-status');
+    const chrisStatus = document.getElementById('chris-status');
 
-// Handle game updates
-socket.on('updateGame', (data) => {
-    console.log(`${data.player} chose: ${data.choice}`);
-    updateScene(data.choice);
-});
-
-// Handle game full scenario
-socket.on('gameFull', () => {
-    document.getElementById('scene').innerText = 'The game is full. Please try again later.';
-});
-
-// Update connection status
-function updateConnectionStatus() {
-    const status = document.getElementById('connection-status');
-    if (role === 'Scott') {
-        status.innerText = 'Waiting for Chris to connect...';
-    } else if (role === 'Chris') {
-        status.innerText = 'Connected as Chris. Ready to play!';
+    // Update Scott's Status
+    if (players.scott.connected) {
+        scottStatus.innerText = `Scott: ${players.scott.ready ? 'Ready' : 'Connected'}`;
+        scottStatus.style.color = players.scott.ready ? 'green' : 'yellow';
+    } else {
+        scottStatus.innerText = 'Scott: Waiting...';
+        scottStatus.style.color = 'red';
     }
-}
 
-// Start the game
+    // Update Chris's Status
+    if (players.chris.connected) {
+        chrisStatus.innerText = `Chris: ${players.chris.ready ? 'Ready' : 'Connected'}`;
+        chrisStatus.style.color = players.chris.ready ? 'green' : 'yellow';
+    } else {
+        chrisStatus.innerText = 'Chris: Waiting...';
+        chrisStatus.style.color = 'red';
+    }
+
+    // Auto-start game if both ready
+    if (players.scott.ready && players.chris.ready) {
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+        startGame();
+    }
+});
+
+// Start Game Logic
 function startGame() {
     currentScene = 'intro';
     updateScene();
+    startBackgroundMusic();
 }
 
-// Update the scene based on the current state
+// Background Music
+function startBackgroundMusic() {
+    if (!musicPlaying) {
+        backgroundMusic.play()
+            .then(() => musicPlaying = true)
+            .catch(error => console.log('Autoplay blocked:', error));
+    }
+}
+
+// Scene Updates
 function updateScene(choice) {
     let sceneText = '';
     let choices = [];
@@ -76,7 +120,7 @@ function updateScene(choice) {
     renderChoices(choices);
 }
 
-// Render choices as buttons
+// Render Choices
 function renderChoices(choices) {
     const choicesDiv = document.getElementById('choices');
     choicesDiv.innerHTML = '';
@@ -88,7 +132,7 @@ function renderChoices(choices) {
     });
 }
 
-// Send player choice to the server
+// Send Choice to Server
 function makeChoice(choice) {
     socket.emit('playerChoice', choice);
     currentScene = choice === 1 ? 'church' : 'alleyway';
