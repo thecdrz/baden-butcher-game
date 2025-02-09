@@ -46,14 +46,6 @@ body::before {
     font-size: 1.1em;
 }
 
-#connection-status span {
-    font-weight: bold;
-}
-
-#scott-status, #chris-status {
-    color: red;
-}
-
 #ready-section {
     margin: 20px 0;
 }

@@ -8,62 +8,45 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-let players = {
-    scott: { id: null, connected: false, ready: false },
-    chris: { id: null, connected: false, ready: false }
-};
-let spectators = new Set();
+let players = new Map(); // Track all players and their readiness
+let readyPlayers = new Set(); // Track players who are ready
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
-    // Assign Scott/Chris or Spectator
-    if (!players.scott.connected) {
-        players.scott.id = socket.id;
-        players.scott.connected = true;
-        socket.emit('assignRole', 'Scott');
-    } else if (!players.chris.connected) {
-        players.chris.id = socket.id;
-        players.chris.connected = true;
-        socket.emit('assignRole', 'Chris');
-    } else {
-        spectators.add(socket.id);
-        socket.emit('assignRole', 'Spectator');
-    }
+    // Add player to the list
+    players.set(socket.id, { ready: false });
+    socket.emit('assignRole', 'Player'); // All players are treated equally
 
-    io.emit('updateConnectionStatus', { players, spectatorCount: spectators.size });
+    // Broadcast updated status
+    io.emit('updateConnectionStatus', { readyCount: readyPlayers.size });
 
-    // Handle readiness (only Scott/Chris can affect the game)
+    // Handle readiness
     socket.on('playerReady', (isReady) => {
-        if (players.scott.id === socket.id) {
-            players.scott.ready = isReady;
-        } else if (players.chris.id === socket.id) {
-            players.chris.ready = isReady;
-        }
-        io.emit('updateConnectionStatus', { players, spectatorCount: spectators.size });
-    });
+        players.set(socket.id, { ready: isReady });
 
-    // Handle choices (only Scott/Chris)
-    socket.on('playerChoice', (choice) => {
-        if (players.scott.id === socket.id || players.chris.id === socket.id) {
-            io.emit('updateGame', { player: socket.id, choice });
+        if (isReady) {
+            readyPlayers.add(socket.id);
+        } else {
+            readyPlayers.delete(socket.id);
         }
+
+        // Start game if 2 players are ready
+        if (readyPlayers.size >= 2) {
+            io.emit('startGame');
+        }
+
+        // Broadcast updated status
+        io.emit('updateConnectionStatus', { readyCount: readyPlayers.size });
     });
 
     // Handle disconnects
     socket.on('disconnect', () => {
-        if (players.scott.id === socket.id) {
-            players.scott.connected = false;
-            players.scott.ready = false;
-            players.scott.id = null;
-        } else if (players.chris.id === socket.id) {
-            players.chris.connected = false;
-            players.chris.ready = false;
-            players.chris.id = null;
-        } else {
-            spectators.delete(socket.id);
-        }
-        io.emit('updateConnectionStatus', { players, spectatorCount: spectators.size });
+        players.delete(socket.id);
+        readyPlayers.delete(socket.id);
+
+        // Broadcast updated status
+        io.emit('updateConnectionStatus', { readyCount: readyPlayers.size });
     });
 });
 
