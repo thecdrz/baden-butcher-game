@@ -9,16 +9,17 @@ const io = new Server(server);
 // Serve static files
 app.use(express.static('public'));
 
-// Track players
+// Track players and spectators
 let players = {
     scott: { id: null, connected: false, ready: false },
     chris: { id: null, connected: false, ready: false }
 };
+let spectators = new Set(); // Track spectator socket IDs
 
 io.on('connection', (socket) => {
-    console.log('A player connected:', socket.id);
+    console.log('A user connected:', socket.id);
 
-    // Assign Scott or Chris role
+    // Assign Scott or Chris role if slots are available
     if (!players.scott.connected) {
         players.scott.id = socket.id;
         players.scott.connected = true;
@@ -28,26 +29,29 @@ io.on('connection', (socket) => {
         players.chris.connected = true;
         socket.emit('assignRole', 'Chris');
     } else {
-        socket.emit('gameFull');
-        socket.disconnect();
+        // Add as spectator
+        spectators.add(socket.id);
+        socket.emit('assignRole', 'Spectator');
     }
 
-    // Broadcast status to all players
-    io.emit('updateConnectionStatus', players);
+    // Broadcast updated status to all clients
+    io.emit('updateConnectionStatus', { players, spectatorCount: spectators.size });
 
-    // Handle readiness
+    // Handle readiness (only Scott and Chris can mark themselves as ready)
     socket.on('playerReady', (isReady) => {
         if (players.scott.id === socket.id) {
             players.scott.ready = isReady;
         } else if (players.chris.id === socket.id) {
             players.chris.ready = isReady;
         }
-        io.emit('updateConnectionStatus', players);
+        io.emit('updateConnectionStatus', { players, spectatorCount: spectators.size });
     });
 
-    // Handle choices
+    // Handle choices (only Scott and Chris can make choices)
     socket.on('playerChoice', (choice) => {
-        io.emit('updateGame', { player: socket.id, choice });
+        if (players.scott.id === socket.id || players.chris.id === socket.id) {
+            io.emit('updateGame', { player: socket.id, choice });
+        }
     });
 
     // Handle quitting to menu
@@ -60,8 +64,10 @@ io.on('connection', (socket) => {
             players.chris.connected = false;
             players.chris.ready = false;
             players.chris.id = null;
+        } else {
+            spectators.delete(socket.id); // Remove spectator
         }
-        io.emit('updateConnectionStatus', players);
+        io.emit('updateConnectionStatus', { players, spectatorCount: spectators.size });
     });
 
     // Handle disconnect
@@ -74,8 +80,10 @@ io.on('connection', (socket) => {
             players.chris.connected = false;
             players.chris.ready = false;
             players.chris.id = null;
+        } else {
+            spectators.delete(socket.id); // Remove spectator
         }
-        io.emit('updateConnectionStatus', players);
+        io.emit('updateConnectionStatus', { players, spectatorCount: spectators.size });
     });
 });
 

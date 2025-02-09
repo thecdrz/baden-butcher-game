@@ -25,8 +25,10 @@ document.getElementById('quit-to-menu-button').addEventListener('click', () => {
     socket.emit('quitToMenu');
 });
 
-// Ready Checkbox
-document.getElementById('ready-checkbox').addEventListener('change', (event) => {
+// Ready Checkbox (Only for Scott and Chris)
+const readySection = document.getElementById('ready-section');
+const readyCheckbox = document.getElementById('ready-checkbox');
+readyCheckbox.addEventListener('change', (event) => {
     isReady = event.target.checked;
     socket.emit('playerReady', isReady);
 });
@@ -45,14 +47,23 @@ document.getElementById('music-toggle').addEventListener('click', () => {
 socket.on('assignRole', (assignedRole) => {
     role = assignedRole;
     document.getElementById('role').innerText = `You are ${role}`;
+
+    // Show ready checkbox only for Scott and Chris
+    if (role === 'Scott' || role === 'Chris') {
+        readySection.style.display = 'block';
+    } else {
+        readySection.style.display = 'none';
+    }
 });
 
 // Update Connection Status
-socket.on('updateConnectionStatus', (players) => {
+socket.on('updateConnectionStatus', ({ players, spectatorCount }) => {
     const scottStatus = document.getElementById('scott-status');
     const chrisStatus = document.getElementById('chris-status');
+    const spectatorCountElement = document.getElementById('spectator-count');
+    const gameSpectatorCount = document.getElementById('game-spectator-count');
 
-    // Update Scott's Status
+    // Update Scott
     if (players.scott.connected) {
         scottStatus.innerText = `Scott: ${players.scott.ready ? 'Ready' : 'Connected'}`;
         scottStatus.style.color = players.scott.ready ? 'green' : 'yellow';
@@ -61,7 +72,7 @@ socket.on('updateConnectionStatus', (players) => {
         scottStatus.style.color = 'red';
     }
 
-    // Update Chris's Status
+    // Update Chris
     if (players.chris.connected) {
         chrisStatus.innerText = `Chris: ${players.chris.ready ? 'Ready' : 'Connected'}`;
         chrisStatus.style.color = players.chris.ready ? 'green' : 'yellow';
@@ -69,6 +80,10 @@ socket.on('updateConnectionStatus', (players) => {
         chrisStatus.innerText = 'Chris: Waiting...';
         chrisStatus.style.color = 'red';
     }
+
+    // Update spectator count
+    spectatorCountElement.innerText = `Spectators: ${spectatorCount}`;
+    gameSpectatorCount.innerText = spectatorCount;
 
     // Auto-start game if both ready
     if (players.scott.ready && players.chris.ready) {
