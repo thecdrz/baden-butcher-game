@@ -11,12 +11,12 @@
         <h1>The Baden Butcher</h1>
         <p>A Twilight Zone Co-op Adventure</p>
         
-        <!-- Connection Status -->
+        <!-- Ready Count -->
         <div id="connection-status">
             <p><span id="ready-count">Players Ready: 0/2</span></p>
         </div>
 
-        <!-- Ready Checkbox -->
+        <!-- Ready Checkbox (Visible to All) -->
         <div id="ready-section">
             <label>
                 <input type="checkbox" id="ready-checkbox"> I'm Ready
@@ -29,21 +29,15 @@
     </div>
 
     <div id="game" style="display: none;">
-        <!-- Game UI -->
-        <div id="game-connection-status">
-            <strong>Spectators:</strong> <span id="spectator-count">0</span>
+        <div id="connection-status">
+            <strong>Players Ready:</strong> <span id="game-ready-count">0/2</span>
         </div>
+        <button id="start-game-button" style="display: none;">Start Game</button>
         <button id="quit-to-menu-button">Quit to Menu</button>
         <h1>The Baden Butcher</h1>
         <div id="role"></div>
         <div id="scene"></div>
         <div id="choices"></div>
-
-        <!-- Chat Box -->
-        <div id="chat-container">
-            <div id="chat-messages"></div>
-            <input type="text" id="chat-input" placeholder="Type a message...">
-        </div>
     </div>
 
     <!-- Music Toggle -->
