@@ -38,6 +38,7 @@
     <div class="fog"></div>
     <div class="blood-overlay"></div>
     <audio id="horror-sound" src="sounds/whispering.mp3" loop></audio>
+
     <script>
         document.addEventListener("click", function() {
             let audio = document.getElementById("horror-sound");
@@ -48,11 +49,11 @@
         });
 
         document.addEventListener("DOMContentLoaded", function() {
-            const readyCheckbox = document.getElementById("ready-checkbox");
-            const startButton = document.getElementById("start-button");
-            
+            let readyCheckbox = document.getElementById("ready-checkbox");
+            let startButton = document.getElementById("start-button");
+
             readyCheckbox.addEventListener("change", function() {
-                startButton.disabled = !this.checked;
+                startButton.disabled = !readyCheckbox.checked;
             });
         });
     </script>

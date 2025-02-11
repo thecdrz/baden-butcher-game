@@ -1,107 +1,67 @@
-body {
-    font-family: 'Creepster', cursive;
-    color: #fff;
-    text-align: center;
-    padding: 20px;
-    margin: 0;
-    background-image: url('images/haunted-forest.jpg');
-    background-size: cover;
-    background-position: center;
-    min-height: 100vh;
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn 2s ease-in;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+const socket = io();
+let role = '';
+let currentScene = '';
+
+document.getElementById('ready-checkbox').addEventListener('change', (e) => {
+    socket.emit('playerReady', e.target.checked);
+});
+
+document.getElementById('start-button').addEventListener('click', () => {
+    socket.emit('startGame');
+});
+
+document.getElementById('quit-to-menu-button').addEventListener('click', () => {
+    socket.emit('quitToMenu');
+    document.getElementById('title-screen').style.display = 'block';
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('connection-status').style.display = 'block';
+    document.getElementById('ready-checkbox').checked = false;
+});
+
+socket.on('assignRole', (assignedRole) => {
+    role = assignedRole;
+    document.getElementById('role').textContent = `You are ${role}`;
+});
+
+socket.on('updateConnectionStatus', (players) => {
+    const scottStatus = document.getElementById('scott-status');
+    const chrisStatus = document.getElementById('chris-status');
+    const startButton = document.getElementById('start-button');
+
+    scottStatus.textContent = players.scott.id ? 
+        `Scott: ${players.scott.ready ? 'Ready ✔️' : 'Connected'}` : 
+        'Scott: Waiting...';
+    
+    chrisStatus.textContent = players.chris.id ? 
+        `Chris: ${players.chris.ready ? 'Ready ✔️' : 'Connected'}` : 
+        'Chris: Waiting...';
+
+    // **Ensure UI updates immediately when both are ready**
+    startButton.disabled = !(players.scott.ready && players.chris.ready);
+});
+
+socket.on('startGame', () => {
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('game').style.display = 'block';
+    document.getElementById('connection-status').style.display = 'none';
+    currentScene = 'intro';
+    updateScene();
+});
+
+socket.on('resetGame', () => {
+    document.getElementById('title-screen').style.display = 'block';
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('connection-status').style.display = 'block';
+    document.getElementById('scott-status').textContent = 'Scott: Waiting...';
+    document.getElementById('chris-status').textContent = 'Chris: Waiting...';
+    document.getElementById('ready-checkbox').checked = false;
+    document.getElementById('start-button').disabled = true;
+});
+
+function updateScene() {
+    // Your existing scene update logic
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-body::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 0;
-}
-
-#title-screen {
-    max-width: 800px;
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1;
-}
-
-.spooky-banner {
-    position: relative;
-    margin: 2rem 0;
-}
-
-.floating-ghost {
-    width: 200px;
-    position: relative;
-    top: 0;
-    animation: float 3s ease-in-out infinite;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-}
-
-.flicker {
-    font-size: 5rem;
-    color: #ff4444;
-    text-shadow: 0 0 10px #ff0000;
-    animation: flicker 2s infinite alternate;
-    margin-top: 1rem;
-    letter-spacing: 3px;
-}
-
-@keyframes flicker {
-    0% { 
-        opacity: 0.8;
-        text-shadow: 0 0 10px #ff0000;
-    }
-    100% { 
-        opacity: 1;
-        text-shadow: 0 0 20px #ff0000,
-                    0 0 30px #ff4444,
-                    0 0 40px #ff4444;
-    }
-}
-
-button {
-    background-color: #440000;
-    color: #fff;
-    border: none;
-    padding: 15px 30px;
-    margin: 15px;
-    cursor: pointer;
-    border-radius: 8px;
-    font-size: 1.3em;
-    transition: all 0.3s ease;
-}
-
-button:hover {
-    background-color: #660000;
-    box-shadow: 0 0 15px #ff0000;
+function makeChoice(choice) {
+    // Your existing choice handling logic
 }
