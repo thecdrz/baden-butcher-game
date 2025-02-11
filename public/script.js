@@ -1,4 +1,5 @@
-const socket = io();
+const socket = io("https://baden-butcher.onrender.com"); // Change this URL to match your Render deployment
+
 let role = '';
 let currentScene = '';
 
@@ -18,7 +19,7 @@ socket.on('disconnect', () => {
 document.getElementById('ready-checkbox').addEventListener('change', function () {
     if (role !== 'Spectator') {
         let isReady = this.checked;
-        console.log(`📢 Player clicked "I'm Ready": ${isReady}`);
+        console.log(`📢 Player (${role}) clicked "I'm Ready": ${isReady}`);
         socket.emit('playerReady', isReady);
     } else {
         console.log("🚫 Spectators cannot select Ready.");
@@ -47,6 +48,8 @@ socket.on('assignRole', (assignedRole) => {
     if (role === 'Spectator') {
         document.getElementById('ready-checkbox').disabled = true;
         document.getElementById('start-button').disabled = true;
+    } else {
+        document.getElementById('ready-checkbox').disabled = false; // 🔥 Ensure it's enabled for Chris
     }
 });
 
@@ -68,6 +71,12 @@ socket.on('updateConnectionStatus', ({ players, spectators }) => {
         `Chris: ${chris.ready ? 'Ready ✔️' : 'Connected'}` : 
         'Chris: Waiting...';
 
+    // 🔥 Ensure the checkbox is enabled for both players
+    if (role === 'Scott' || role === 'Chris') {
+        document.getElementById('ready-checkbox').disabled = false;
+    }
+
+    // 🔥 Ensure Chris's checkbox updates correctly
     if (role === 'Scott') {
         document.getElementById('ready-checkbox').checked = scott?.ready || false;
     } else if (role === 'Chris') {
