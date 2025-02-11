@@ -1,67 +1,171 @@
-const socket = io();
-let role = '';
-let currentScene = '';
-
-document.getElementById('ready-checkbox').addEventListener('change', (e) => {
-    socket.emit('playerReady', e.target.checked);
-});
-
-document.getElementById('start-button').addEventListener('click', () => {
-    socket.emit('startGame');
-});
-
-document.getElementById('quit-to-menu-button').addEventListener('click', () => {
-    socket.emit('quitToMenu');
-    document.getElementById('title-screen').style.display = 'block';
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('connection-status').style.display = 'block';
-    document.getElementById('ready-checkbox').checked = false;
-});
-
-socket.on('assignRole', (assignedRole) => {
-    role = assignedRole;
-    document.getElementById('role').textContent = `You are ${role}`;
-});
-
-socket.on('updateConnectionStatus', (players) => {
-    const scottStatus = document.getElementById('scott-status');
-    const chrisStatus = document.getElementById('chris-status');
-    const startButton = document.getElementById('start-button');
-
-    scottStatus.textContent = players.scott.id ? 
-        `Scott: ${players.scott.ready ? 'Ready ✔️' : 'Connected'}` : 
-        'Scott: Waiting...';
-    
-    chrisStatus.textContent = players.chris.id ? 
-        `Chris: ${players.chris.ready ? 'Ready ✔️' : 'Connected'}` : 
-        'Chris: Waiting...';
-
-    // **Ensure UI updates immediately when both are ready**
-    startButton.disabled = !(players.scott.ready && players.chris.ready);
-});
-
-socket.on('startGame', () => {
-    document.getElementById('title-screen').style.display = 'none';
-    document.getElementById('game').style.display = 'block';
-    document.getElementById('connection-status').style.display = 'none';
-    currentScene = 'intro';
-    updateScene();
-});
-
-socket.on('resetGame', () => {
-    document.getElementById('title-screen').style.display = 'block';
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('connection-status').style.display = 'block';
-    document.getElementById('scott-status').textContent = 'Scott: Waiting...';
-    document.getElementById('chris-status').textContent = 'Chris: Waiting...';
-    document.getElementById('ready-checkbox').checked = false;
-    document.getElementById('start-button').disabled = true;
-});
-
-function updateScene() {
-    // Your existing scene update logic
+body {
+    font-family: 'Creepster', cursive;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+    background-image: url('images/haunted-forest.jpg');
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 2s ease-in;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
 }
 
-function makeChoice(choice) {
-    // Your existing choice handling logic
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 0;
+}
+
+/* Ensure title screen & form elements are on top */
+#title-screen {
+    max-width: 600px;
+    width: 100%;
+    height: 100vh; /* Full height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 10; /* Move above overlays */
+}
+
+.spooky-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.floating-ghost {
+    width: 200px;
+    height: auto;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+.flicker {
+    font-size: 3rem;
+    color: #ff4444;
+    text-shadow: 0 0 10px #ff0000;
+    animation: flicker 2s infinite alternate;
+    margin-top: 1rem;
+    letter-spacing: 3px;
+}
+
+@keyframes flicker {
+    0% { 
+        opacity: 0.8;
+        text-shadow: 0 0 10px #ff0000;
+    }
+    100% { 
+        opacity: 1;
+        text-shadow: 0 0 20px #ff0000,
+                    0 0 30px #ff4444,
+                    0 0 40px #ff4444;
+    }
+}
+
+/* Fix Ready Checkbox Clickability */
+#ready-section {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    color: #fff;
+    text-shadow: 0 0 5px #ff0000;
+    position: relative;
+    z-index: 15; /* Higher than fog & blood */
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.7); /* Make sure it's visible */
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#ready-checkbox {
+    margin-right: 10px;
+    transform: scale(1.5);
+    cursor: pointer;
+    position: relative;
+    z-index: 16; /* Ensure it's the highest */
+}
+
+/* Fix button layering */
+button {
+    background-color: #440000;
+    color: #fff;
+    border: none;
+    padding: 12px 25px;
+    margin: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 15;
+}
+
+button:hover {
+    background-color: #660000;
+    box-shadow: 0 0 15px #ff0000;
+}
+
+#start-button:disabled {
+    background-color: #333;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Ensure overlays do not block interactions */
+.fog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300%;
+    height: 300%;
+    background: url('images/fog.gif') repeat;
+    opacity: 0.2;
+    z-index: 2; /* Lower than UI */
+    animation: moveFog 60s linear infinite;
+    pointer-events: none; /* Prevent blocking clicks */
+}
+
+@keyframes moveFog {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(-50px, -50px); }
+    100% { transform: translate(0, 0); }
+}
+
+.blood-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('images/blood.png') no-repeat center center;
+    background-size: cover;
+    mix-blend-mode: multiply;
+    opacity: 0.5;
+    z-index: 3; /* Lower than UI */
+    pointer-events: none; /* Prevent blocking clicks */
 }
